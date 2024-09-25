@@ -17,6 +17,7 @@ int main(){
   addUser(users, &count, 2, "Bob", "bob@example.com", "password456", 30);
   
   displayusers(users, count);
+  saveusertofile(users, count, "users.txt")
   free(users);
   returnà;
 }
