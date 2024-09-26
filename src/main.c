@@ -1,23 +1,21 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "repl.c"
-#include "table.c"
-#include <stdbool.h>
-#include <string.h>
+#include "table.h"
 
+int main() {
+    UserArray* userArray = createUserArray();
+    if (userArray == NULL) {
+        printf("Failed to create user array\n");
+        return 1;
+    }
 
-int main(){
-  int max_users=10;
-  int count=0
+    addUser(userArray, 1, "Alice");
+    addUser(userArray, 2, "Bob");
 
+    displayUsers(userArray);
 
-  User *users =malloc(max_users * sizeof(User));
+    if (!saveUsersToFile(userArray, "users.txt")) {
+        printf("Failed to save users to file\n");
+    }
 
-  addUser(users, &count, 1, "Alice", "alice@example.com", "password123", 25);
-  addUser(users, &count, 2, "Bob", "bob@example.com", "password456", 30);
-  
-  displayusers(users, count);
-  saveusertofile(users, count, "users.txt")
-  free(users);
-  returnà;
+    freeUserArray(userArray);
+    return 0;
 }

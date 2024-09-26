@@ -1,52 +1,66 @@
-#include <stdio.h>
+#include "table.h"
 #include <stdlib.h>
 #include <string.h>
 
+#define INITIAL_CAPACITY 10
 
-// donner de user 
-
-typedef struct {
-    int id ;
-    char nom [50]; 
-    char email[100];
-    char mdp[50];
-    int age;
-
-}User;
-
-
-void addUser(User *users, int *count,int id,char *nom,char *email, char *mdp, int age){
-    users[*count].id = id;
-    strcpy(users[*count].nom, nom);
-    strcpy(users[*count].email, email);
-    strcpy(users[*count].mdp, mdp);
-    users[*count].age = age;
-    (*count)++;
-
+UserArray* createUserArray() {
+    UserArray* userArray = malloc(sizeof(UserArray));
+    if (userArray == NULL) {
+        return NULL;
+    }
+    userArray->users = malloc(INITIAL_CAPACITY * sizeof(User));
+    if (userArray->users == NULL) {
+        free(userArray);
+        return NULL;
+    }
+    userArray->count = 0;
+    userArray->capacity = INITIAL_CAPACITY;
+    return userArray;
 }
 
+int addUser(UserArray* userArray, int id, const char* nom) {
+    if (userArray->count >= userArray->capacity) {
+        int newCapacity = userArray->capacity * 2;
+        User* newUsers = realloc(userArray->users, newCapacity * sizeof(User));
+        if (newUsers == NULL) {
+            return 0;  
+        }
+        userArray->users = newUsers;
+        userArray->capacity = newCapacity;
+    }
 
-//afficher les users
+    userArray->users[userArray->count].id = id;
+    strncpy(userArray->users[userArray->count].nom, nom, MAX_NAME_LENGTH - 1);
+    userArray->users[userArray->count].nom[MAX_NAME_LENGTH - 1] = '\0';
+    userArray->count++;
+    return 1;  // Succès
+}
 
-void displayusers(User *users, int count){
-    for (int i = 0 ; i< count ; i++){
-        printf("ID: %d, Nom: %s, Email: %s, Age: %d\n", users[i].id, users[i].nom, users[i].email, users[i].age);
+void displayUsers(const UserArray* userArray) {
+    for (int i = 0; i < userArray->count; i++) {
+        printf("ID: %d, Nom: %s\n", userArray->users[i].id, userArray->users[i].nom);
     }
 }
 
-
-// save user 
-
-
-void saveusertofile(User *users, int count , const char *bdd_users_file){
-    FILE *file = fopen(filename, "w");
+int saveUsersToFile(const UserArray* userArray, const char* bdd_users_file) {
+    FILE* file = fopen(bdd_users_file, "w");
     if (file == NULL) {
         printf("Error opening file!\n");
-        return;
+        return 0;
     }
-    for (int i=0;i<count;i++){
-        fprintf(file, "%d %s %s %s %d\n", users[i].id, users[i].nom, users[i].email, users[i].mdp, users[i].age);
+    for (int i = 0; i < userArray->count; i++) {
+        if (fprintf(file, "%d %s\n", userArray->users[i].id, userArray->users[i].nom) < 0) {
+            fclose(file);
+            return 0;  // Échec de l'écriture
+        }
     }
     fclose(file);
-    printf("user saved at %s.\n ",bdd_users_file)
+    printf("Users saved to %s.\n", bdd_users_file);
+    return 1;  // Succès
+}
+
+void freeUserArray(UserArray* userArray) {
+    free(userArray->users);
+    free(userArray);
 }

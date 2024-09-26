@@ -1,12 +1,17 @@
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>    
+#include <stdlib.h>   
+#include <stddef.h> 
 
 
 
 
 typedef enum {
   META_COMMAND_SUCCESS,
-  META_COMMAND_UNRECOGNIZED_COMMAND
+  META_COMMAND_UNRECOGNIZED_COMMAND,
+ 
+
 } MetaCommandResult;
 
 typedef enum { PREPARE_SUCCESS, PREPARE_UNRECOGNIZED_STATEMENT } PrepareResult;
@@ -22,14 +27,22 @@ typedef struct {
 typedef struct {
   char* buffer;
   size_t buffer_length;
-  ssize_t input_length;
+  size_t input_length;
 } InputBuffer;
 
 InputBuffer* new_input_buffer() {
   InputBuffer* input_buffer = (InputBuffer*)malloc(sizeof(InputBuffer));
+  if (input_buffer == NULL){
+    printf("Memory allocation failed\n");
+    exit(EXIT_FAILURE);
+  }
+
+
   input_buffer->buffer = NULL;
+
   input_buffer->buffer_length = 0;
   input_buffer->input_length = 0;
+
 
   return input_buffer;
 }
