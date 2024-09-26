@@ -1,25 +1,26 @@
 #ifndef TABLE_H
 #define TABLE_H
 
-#include <stdio.h>
+#include <stdint.h>
 
-#define MAX_NAME_LENGTH 50
-
-typedef struct {
-    int id;
-    char nom[MAX_NAME_LENGTH];
-} User;
+#define COLUMN_USERNAME_SIZE 32
+#define COLUMN_EMAIL_SIZE 255
+#define TABLE_MAX_PAGES 100
+#define ROWS_PER_PAGE 100
 
 typedef struct {
-    User* users;
-    int count;
-    int capacity;
-} UserArray;
+    uint32_t id;
+    char username[COLUMN_USERNAME_SIZE + 1];
+    char email[COLUMN_EMAIL_SIZE + 1];
+} Row;
 
-UserArray* createUserArray();
-int addUser(UserArray* userArray, int id, const char* nom);
-void displayUsers(const UserArray* userArray);
-int saveUsersToFile(const UserArray* userArray, const char* bdd_users_file);
-void freeUserArray(UserArray* userArray);
+typedef struct {
+    uint32_t num_rows;
+    void* pages[TABLE_MAX_PAGES];
+} Table;
 
-#endif // TABLE_H
+Table* new_table();
+void free_table(Table* table);
+void* row_slot(Table* table, uint32_t row_num);
+
+#endif

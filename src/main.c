@@ -1,21 +1,15 @@
+#include "repl.h"
 #include "table.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 int main() {
-    UserArray* userArray = createUserArray();
-    if (userArray == NULL) {
-        printf("Failed to create user array\n");
+    Table* table = new_table();  
+    if (table == NULL) {
+        fprintf(stderr, "Failed to create table\n");
         return 1;
     }
-
-    addUser(userArray, 1, "Alice");
-    addUser(userArray, 2, "Bob");
-
-    displayUsers(userArray);
-
-    if (!saveUsersToFile(userArray, "users.txt")) {
-        printf("Failed to save users to file\n");
-    }
-
-    freeUserArray(userArray);
+    repl(table);
+    free_table(table); 
     return 0;
 }
