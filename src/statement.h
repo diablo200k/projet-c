@@ -14,6 +14,7 @@ typedef enum {
 typedef enum {
     EXECUTE_SUCCESS,
     EXECUTE_TABLE_FULL,
+    EXECUTE_DUPLICATE_KEY,
     EXECUTE_FAILURE
 } ExecuteResult;
 
@@ -31,5 +32,7 @@ ExecuteResult execute_select(Table* table);
 void serialize_row(Row* source, void* destination);
 void deserialize_row(void* source, Row* destination);
 void print_row(Row* row);
+void print_row_formatted(int id, const char* username, const char* email, int id_width, int username_width, int email_width);
+void print_separator(int id_width, int username_width, int email_width);
 
 #endif

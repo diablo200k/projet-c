@@ -47,31 +47,103 @@ ExecuteResult execute_statement(Statement* statement, Table* table) {
 }
 
 ExecuteResult execute_insert(Statement* statement, Table* table) {
-    if (table->num_rows >= ROWS_PER_PAGE * TABLE_MAX_PAGES) {
-        return EXECUTE_TABLE_FULL;
+    Row* row_to_insert = &(statement->row_to_insert);
+
+    // Vérifier si l'ID existe déjà
+    FILE* file = fopen("database_backup.txt", "r");
+    if (file != NULL) {
+        char line[512];
+        while (fgets(line, sizeof(line), file)) {
+            int id;
+            if (sscanf(line, "%d,", &id) == 1 && id == row_to_insert->id) {
+                fclose(file);
+                printf("Erreur : ID %d existe déjà.\n", id);
+                return EXECUTE_DUPLICATE_KEY;
+            }
+        }
+        fclose(file);
     }
 
-    Row* row_to_insert = &(statement->row_to_insert);
-    void* page = row_slot(table, table->num_rows);
-    if (page == NULL) {
+    // Ajouter la nouvelle ligne au fichier
+    file = fopen("database_backup.txt", "a");
+    if (file == NULL) {
+        printf("Erreur lors de l'ouverture du fichier de sauvegarde.\n");
         return EXECUTE_FAILURE;
     }
-    serialize_row(row_to_insert, page);
-    table->num_rows += 1;
+    fprintf(file, "%d,%s,%s\n", row_to_insert->id, row_to_insert->username, row_to_insert->email);
+    fclose(file);
 
+    printf("Inserted 1 row.\n");
     return EXECUTE_SUCCESS;
 }
 
+#define MAX_COLUMN_WIDTH 20
+
+void print_separator(int id_width, int username_width, int email_width) {
+    printf("+-%*s-+-%*s-+-%*s-+\n", id_width, "", username_width, "", email_width, "");
+}
+
+void print_row_formatted(int id, const char* username, const char* email, int id_width, int username_width, int email_width) {
+    printf("| %*d | %-*.*s | %-*.*s |\n", 
+           id_width, id, 
+           username_width, username_width, username, 
+           email_width, email_width, email);
+}
+
 ExecuteResult execute_select(Table* table) {
-    Row row;
-    for (uint32_t i = 0; i < table->num_rows; i++) {
-        void* page = row_slot(table, i);
-        if (page == NULL) {
-            return EXECUTE_FAILURE;
-        }
-        deserialize_row(page, &row);
-        print_row(&row);
+    FILE* file = fopen("database_backup.txt", "r");
+    if (file == NULL) {
+        printf("Aucune donnée à afficher.\n");
+        return EXECUTE_SUCCESS;
     }
+
+    int id_width = 5;
+    int username_width = 10;
+    int email_width = 20;
+
+    // Première passe pour déterminer les largeurs des colonnes
+    char line[512];
+    while (fgets(line, sizeof(line), file)) {
+        int id;
+        char username[COLUMN_USERNAME_SIZE];
+        char email[COLUMN_EMAIL_SIZE];
+        if (sscanf(line, "%d,%[^,],%s", &id, username, email) == 3) {
+            int id_len = snprintf(NULL, 0, "%d", id);
+            int username_len = strlen(username);
+            int email_len = strlen(email);
+
+            if (id_len > id_width) id_width = id_len;
+            if (username_len > username_width) username_width = username_len;
+            if (email_len > email_width) email_width = email_len;
+        }
+    }
+
+    // Limiter la largeur maximale des colonnes
+    if (id_width > MAX_COLUMN_WIDTH) id_width = MAX_COLUMN_WIDTH;
+    if (username_width > MAX_COLUMN_WIDTH) username_width = MAX_COLUMN_WIDTH;
+    if (email_width > MAX_COLUMN_WIDTH) email_width = MAX_COLUMN_WIDTH;
+
+    // Afficher l'en-tête
+    print_separator(id_width, username_width, email_width);
+    printf("| %*s | %-*s | %-*s |\n", id_width, "ID", username_width, "Username", email_width, "Email");
+    print_separator(id_width, username_width, email_width);
+
+    // Réinitialiser le fichier pour la deuxième passe
+    rewind(file);
+
+    // Afficher les données
+    while (fgets(line, sizeof(line), file)) {
+        int id;
+        char username[COLUMN_USERNAME_SIZE];
+        char email[COLUMN_EMAIL_SIZE];
+        if (sscanf(line, "%d,%[^,],%s", &id, username, email) == 3) {
+            print_row_formatted(id, username, email, id_width, username_width, email_width);
+        }
+    }
+
+    print_separator(id_width, username_width, email_width);
+
+    fclose(file);
     return EXECUTE_SUCCESS;
 }
 
@@ -89,4 +161,14 @@ void deserialize_row(void* source, Row* destination) {
 
 void print_row(Row* row) {
     printf("(%d, %s, %s)\n", row->id, row->username, row->email);
+}
+
+void write_to_file(Row* row) {
+    FILE* file = fopen("database_backup.txt", "a");
+    if (file == NULL) {
+        printf("Erreur lors de l'ouverture du fichier de sauvegarde.\n");
+        return;
+    }
+    fprintf(file, "%d,%s,%s\n", row->id, row->username, row->email);
+    fclose(file);
 }

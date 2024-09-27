@@ -30,5 +30,9 @@ void close_input_buffer(InputBuffer* input_buffer) {
 }
 
 void print_prompt() {
+    printf("-------------------------------\n");
+    printf("|   Bienvenu dans ma bdd      |\n");
+    printf("-------------------------------\n");
+
     printf("db > ");
 }

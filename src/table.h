@@ -22,5 +22,6 @@ typedef struct {
 Table* new_table();
 void free_table(Table* table);
 void* row_slot(Table* table, uint32_t row_num);
+void serialize_row(Row* source, void* destination);
 
 #endif

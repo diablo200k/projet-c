@@ -22,7 +22,7 @@ void repl(Table* table) {
         read_input(input_buffer);
 
         if (input_buffer->buffer[0] == '.') {
-            switch (do_meta_command(input_buffer, table)) {  
+            switch (do_meta_command(input_buffer, table)) {
                 case META_COMMAND_SUCCESS:
                     continue;
                 case META_COMMAND_UNRECOGNIZED_COMMAND:
@@ -40,6 +40,12 @@ void repl(Table* table) {
                 continue;
             case PREPARE_UNRECOGNIZED_STATEMENT:
                 printf("Unrecognized keyword at start of '%s'.\n", input_buffer->buffer);
+                continue;
+            case PREPARE_STRING_TOO_LONG:
+                printf("String is too long.\n");
+                continue;
+            default:
+                printf("Unknown prepare result.\n");
                 continue;
         }
 
