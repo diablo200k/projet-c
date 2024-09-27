@@ -18,12 +18,15 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table) {
 void repl(Table* table) {
     InputBuffer* input_buffer = new_input_buffer();
     while (true) {
+        printf("Debug: Starting REPL iteration\n");
         print_prompt();
         read_input(input_buffer);
+        printf("Debug: Input read: %s\n", input_buffer->buffer);
 
         if (input_buffer->buffer[0] == '.') {
             switch (do_meta_command(input_buffer, table)) {
                 case META_COMMAND_SUCCESS:
+                    printf("Debug: Meta command executed successfully\n");
                     continue;
                 case META_COMMAND_UNRECOGNIZED_COMMAND:
                     printf("Unrecognized command '%s'\n", input_buffer->buffer);
@@ -32,7 +35,10 @@ void repl(Table* table) {
         }
 
         Statement statement;
-        switch (prepare_statement(input_buffer, &statement)) {
+        PrepareResult prepare_result = prepare_statement(input_buffer, &statement);
+        printf("Debug: Prepare result: %d\n", prepare_result);
+
+        switch (prepare_result) {
             case PREPARE_SUCCESS:
                 break;
             case PREPARE_SYNTAX_ERROR:
@@ -44,12 +50,24 @@ void repl(Table* table) {
             case PREPARE_STRING_TOO_LONG:
                 printf("String is too long.\n");
                 continue;
-            default:
-                printf("Unknown prepare result.\n");
-                continue;
         }
 
-        execute_statement(&statement, table);
-        printf("Executed.\n");
+        ExecuteResult execute_result = execute_statement(&statement, table);
+        printf("Debug: Execute result: %d\n", execute_result);
+
+        switch (execute_result) {
+            case EXECUTE_SUCCESS:
+                printf("Executed.\n");
+                break;
+            case EXECUTE_TABLE_FULL:
+                printf("Error: Table full.\n");
+                break;
+            case EXECUTE_DUPLICATE_KEY:
+                printf("Error: Duplicate key.\n");
+                break;
+            case EXECUTE_FAILURE:
+                printf("Error: Execution failed.\n");
+                break;
+        }
     }
 }

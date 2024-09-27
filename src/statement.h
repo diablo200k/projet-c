@@ -20,15 +20,18 @@ typedef enum {
 
 typedef enum { STATEMENT_INSERT, STATEMENT_SELECT } StatementType;
 
+typedef enum { CONDITION_NONE, CONDITION_ID } ConditionColumn;
+
 typedef struct {
     StatementType type;
     Row row_to_insert;  
+    ConditionColumn condition_column;
+    int condition_value;
 } Statement;
-
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement);
 ExecuteResult execute_statement(Statement* statement, Table* table);
 ExecuteResult execute_insert(Statement* statement, Table* table);
-ExecuteResult execute_select(Table* table);
+ExecuteResult execute_select(Statement* statement, Table* table);
 void serialize_row(Row* source, void* destination);
 void deserialize_row(void* source, Row* destination);
 void print_row(Row* row);
