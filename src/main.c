@@ -11,6 +11,5 @@ int main() {
     }
     repl(table);
     free_table(table); 
-    system("pause");  
     return 0;
 }

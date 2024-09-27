@@ -9,24 +9,22 @@
 MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table) {
     if (strcmp(input_buffer->buffer, ".exit") == 0) {
         close_input_buffer(input_buffer);
-        free_table(table);  
+        free_table(table);
         exit(EXIT_SUCCESS);
+    } else {
+        return META_COMMAND_UNRECOGNIZED_COMMAND;
     }
-    return META_COMMAND_UNRECOGNIZED_COMMAND;
 }
 
 void repl(Table* table) {
     InputBuffer* input_buffer = new_input_buffer();
     while (true) {
-        printf("Debug: Starting REPL iteration\n");
         print_prompt();
         read_input(input_buffer);
-        printf("Debug: Input read: %s\n", input_buffer->buffer);
 
         if (input_buffer->buffer[0] == '.') {
             switch (do_meta_command(input_buffer, table)) {
                 case META_COMMAND_SUCCESS:
-                    printf("Debug: Meta command executed successfully\n");
                     continue;
                 case META_COMMAND_UNRECOGNIZED_COMMAND:
                     printf("Unrecognized command '%s'\n", input_buffer->buffer);
@@ -35,10 +33,7 @@ void repl(Table* table) {
         }
 
         Statement statement;
-        PrepareResult prepare_result = prepare_statement(input_buffer, &statement);
-        printf("Debug: Prepare result: %d\n", prepare_result);
-
-        switch (prepare_result) {
+        switch (prepare_statement(input_buffer, &statement)) {
             case PREPARE_SUCCESS:
                 break;
             case PREPARE_SYNTAX_ERROR:
@@ -52,10 +47,7 @@ void repl(Table* table) {
                 continue;
         }
 
-        ExecuteResult execute_result = execute_statement(&statement, table);
-        printf("Debug: Execute result: %d\n", execute_result);
-
-        switch (execute_result) {
+        switch (execute_statement(&statement, table)) {
             case EXECUTE_SUCCESS:
                 printf("Executed.\n");
                 break;

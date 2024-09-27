@@ -45,9 +45,30 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
         return PREPARE_SYNTAX_ERROR;
     }
     
+    if (strncmp(input_buffer->buffer, "update", 6) == 0) {
+        statement->type = STATEMENT_UPDATE;
+        int args_assigned = sscanf(input_buffer->buffer, "update %d set username=%s email=%s",
+                                   &(statement->row_to_update.id),
+                                   statement->row_to_update.username,
+                                   statement->row_to_update.email);
+        if (args_assigned < 3) {
+            return PREPARE_SYNTAX_ERROR;
+        }
+        return PREPARE_SUCCESS;
+    }
+    
+    if (strncmp(input_buffer->buffer, "delete", 6) == 0) {
+        statement->type = STATEMENT_DELETE;
+        int args_assigned = sscanf(input_buffer->buffer, "delete where id=%d",
+                                   &(statement->id_to_delete));
+        if (args_assigned < 1) {
+            return PREPARE_SYNTAX_ERROR;
+        }
+        return PREPARE_SUCCESS;
+    }
+    
     return PREPARE_UNRECOGNIZED_STATEMENT;
 }
-
 
 ExecuteResult execute_statement(Statement* statement, Table* table) {
     switch (statement->type) {
@@ -55,6 +76,10 @@ ExecuteResult execute_statement(Statement* statement, Table* table) {
             return execute_insert(statement, table);
         case STATEMENT_SELECT:
             return execute_select(statement, table);
+        case STATEMENT_UPDATE:
+            return execute_update(statement, table);
+        case STATEMENT_DELETE:
+            return execute_delete(statement, table);
         default:
             return EXECUTE_FAILURE;
     }
@@ -89,6 +114,80 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 
     printf("Inserted 1 row.\n");
     return EXECUTE_SUCCESS;
+}
+ExecuteResult execute_update(Statement* statement, Table* table) {
+    FILE* file = fopen("database_backup.txt", "r");
+    FILE* temp = fopen("temp.txt", "w");
+    if (file == NULL || temp == NULL) {
+        printf("Erreur lors de l'ouverture des fichiers.\n");
+        return EXECUTE_FAILURE;
+    }
+
+    char line[512];
+    int updated = 0;
+    while (fgets(line, sizeof(line), file)) {
+        int id;
+        char username[COLUMN_USERNAME_SIZE];
+        char email[COLUMN_EMAIL_SIZE];
+        if (sscanf(line, "%d,%[^,],%s", &id, username, email) == 3) {
+            if (id == statement->row_to_update.id) {
+                fprintf(temp, "%d,%s,%s\n", id, statement->row_to_update.username, statement->row_to_update.email);
+                updated = 1;
+            } else {
+                fprintf(temp, "%s", line);
+            }
+        }
+    }
+
+    fclose(file);
+    fclose(temp);
+
+    if (updated) {
+        remove("database_backup.txt");
+        rename("temp.txt", "database_backup.txt");
+        printf("Updated 1 row.\n");
+        return EXECUTE_SUCCESS;
+    } else {
+        remove("temp.txt");
+        printf("ID not found. No update performed.\n");
+        return EXECUTE_FAILURE;
+    }
+}
+
+ExecuteResult execute_delete(Statement* statement, Table* table) {
+    FILE* file = fopen("database_backup.txt", "r");
+    FILE* temp = fopen("temp.txt", "w");
+    if (file == NULL || temp == NULL) {
+        printf("Erreur lors de l'ouverture des fichiers.\n");
+        return EXECUTE_FAILURE;
+    }
+
+    char line[512];
+    int deleted = 0;
+    while (fgets(line, sizeof(line), file)) {
+        int id;
+        if (sscanf(line, "%d,", &id) == 1) {
+            if (id != statement->id_to_delete) {
+                fprintf(temp, "%s", line);
+            } else {
+                deleted = 1;
+            }
+        }
+    }
+
+    fclose(file);
+    fclose(temp);
+
+    if (deleted) {
+        remove("database_backup.txt");
+        rename("temp.txt", "database_backup.txt");
+        printf("Deleted 1 row.\n");
+        return EXECUTE_SUCCESS;
+    } else {
+        remove("temp.txt");
+        printf("ID not found. No deletion performed.\n");
+        return EXECUTE_FAILURE;
+    }
 }
 
 #define MAX_COLUMN_WIDTH 20
