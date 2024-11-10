@@ -27,14 +27,15 @@ Le projet utilise un Makefile pour simplifier la compilation. Suivez ces étapes
 3. Pour compiler le projet, exécutez :
    ```bash
    make
+
 Pour exécuter le programme, utilisez :
-   bash
+   ```bash
    ./program
-
+```
 Pour nettoyer les fichiers objets et l'exécutable, utilisez :
-   bash
+   ```bash
    make clean
-
+```
 ## Utilisation
 Après avoir lancé le programme, vous pouvez utiliser les commandes suivantes :
 
