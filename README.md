@@ -60,11 +60,6 @@ Chaque enregistrement contient :
 
 Les données sont stockées en mémoire dans une structure de table paginée pour une gestion efficace, et un **arbre B** est utilisé pour l'indexation, permettant des recherches rapides.
 
-## Améliorations Futures
-- Ajout de fonctionnalités de recherche plus avancées.
-- Implémentation de transactions et de verrouillage de fichiers.
-- Optimisation des performances pour de grandes quantités de données.
-- Support de types de données supplémentaires.
 
 ## Auteur
 Hassan Mohamed
